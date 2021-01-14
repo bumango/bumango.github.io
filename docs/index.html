@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>步满</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="Description">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify/lib/themes/vue.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.css">
+  <!--mermaid画图工具-->
+  <script src="//cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <!--gitalk评论-->
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk/dist/gitalk.css">
+</head>
+
+<body>
+  <div id="app"></div>
+  <style type="text/css">
+    .sidebar p.active {
+      border-right: 2px solid;
+      color: var(--theme-color, #42b983);
+      font-weight: 600;
+    }
+  </style>
+  <script>
+    var num = 0;
+    mermaid.initialize({ startOnLoad: false });
+    window.$docsify = {
+      name: '首页',
+      repo: 'https://github.com/bumangrowing/bumangrowing.github.io',
+      loadSidebar: true,
+      mergeNavbar: true,
+      subMaxLevel: 3,
+      autoHeader: true,
+      search: {
+        paths: 'auto',
+        placeholder: '🔍 搜索 ',
+        noData: '哎呀，没有找到呀！ ',
+        hideOtherSidebarContent: false,
+        depth: 3
+      },
+      copyCode: {
+        buttonText: '复制',
+        errorText: 'Error',
+        successText: 'OK!'
+      },
+      pagination: {
+        previousText: '上一章',
+        nextText: '下一章',
+      },
+      markdown: {
+        renderer: {
+          code: function (code, lang) {
+            if (lang === "mermaid") {
+              return (
+                '<div class="mermaid">' + mermaid.render('mermaid-svg-' + num++, code) + "</div>"
+              );
+            }
+            return this.origin.code.apply(this, arguments);
+          }
+        }
+      }
+    }
+  </script>
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/gitalk.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+  <script>
+  const gitalk = new Gitalk({
+    clientID: 'e75bc27768fa0d5b5cab',
+    clientSecret: 'cd0055405466c8442f7a161a392acb44c3d8eba0',
+    repo: 'talk',
+    owner: 'bumangrowing',
+    admin: ['bumangrowing'],
+    // facebook-like distraction free mode
+    distractionFreeMode: false
+  })
+</script>
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/docsify.min.js"></script>>
+  <!--代码块复制插件-->
+  <script src="//cdn.jsdelivr.net/npm/docsify-copy-code"></script>
+  <!--搜索插件-->
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+  <!--图片缩放-->
+   <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/zoom-image.min.js"></script>
+  <!--语法高亮插件-->
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-java.min.js"></script>
+  <!--分页插件-->
+  <script src="//cdn.jsdelivr.net/npm/docsify-pagination/dist/docsify-pagination.min.js"></script>
+</body>
+
+</html>
