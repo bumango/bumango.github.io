@@ -1,6 +1,6 @@
 # Thrift之IDL
 
-Thrift是Facebook开发的跨语言RPC服务框架，利用IDL（Interface Description Language）文件来定义接口和数据类型，通过Thrift提供的编译器编译成不同语言代码，以此实现跨语言调用。
+Thrift是Facebook开发的跨语言平台的一种RPC服务框架（跨语言的还有gRPC），利用IDL（Interface Description Language）文件来定义接口和数据类型，通过Thrift提供的编译器编译成不同语言代码，以此实现跨语言调用。
 
 ## 基本类型（Base Types）
 
@@ -26,6 +26,16 @@ Thrift是Facebook开发的跨语言RPC服务框架，利用IDL（Interface Descr
 |set\<T>|元素无序列表，不允许重复|java.util.Set|[]T|GO没有set集合以数组代替|
 |map<K,V>|key-value结构数据，key不允许重复|java.util.Map|map[K] V||
 >Tips: 在使用容器类型时必须指定泛型，否则无法编译idl文件。其次，泛型中的基本类型，JAVA语言中会被替换为对应的包装类型。
+
+## 常量及类型别名（Const&&Typedef）
+
+```thrift
+//常量定义
+const i32 MALE_INT = 1
+const map<i32, string> GENDER_MAP = {1: "male", 2: "female"}
+//某些数据类型比较长可以用别名简化
+typedef map<i32, string> gmp
+```
 
 ## 枚举（enum）
 
@@ -63,15 +73,14 @@ enum RoleEnum{
 * 成员字段是强类型（即明确指定类型），字段不允许重复；
 * 字段必须使用正整数+冒号编号（如 1: i32 id），编号不允许重复，可以不连续；
 * 成员字段间分隔符可使用（,）和（;），可以混用也可均不用，为了方便阅读和该死的强迫症，建议统一；
-* 字段可以使用optional和required修饰，默认是required；区别是required修饰的字段在远程调用时必须传值，optional修饰的字段只有在被赋值时才会被序列化；
+* 字段可以使用optional和required修饰，默认是optional；区别是required修饰的字段在远程调用时必须传值，optional修饰的字段只有在被赋值时才会被序列化；
 * 基本类型和enum类型的字段可以默认赋值，但struct类型的字段不允许；
 * 基于业务域划分或设计角度，多个struct可以定义在不同的idl文件中，通过include “xxx.thrift”引用;
   注意使用include引入的struct时需要使用文件名前缀(n: xxx.DemoStruct demoStruct), 编译时thrift自动补全被引入thrift文件中定义的namespace。
 
-
 ```thrift
 /**
- * struct嵌套及include使用示例
+ * struct嵌套及include使用示例，备注错误的位置会导致IDL文件无法编译，具体请参考下方的”struct不可以双向引用“。
  */
 //guild.thrift
 namespace java io.buman.guild
@@ -103,17 +112,39 @@ enum RoleEnum{
 
 struct Player {
     1: i32 id,
-    2: string name,
-    3: RoleEnum role,
-    4: GenderEnum = GenderEnum.UNKNOWN,
+    2: required string name,
+    3: required RoleEnum role,
+    4: required GenderEnum gender = GenderEnum.UNKNOWN,
     5: Player cp,
     6: guild.Guild guild
 }
 ```
 
->Tips: struct不可以双向引用，即player.thrift文件引用了guild.thrfit后，guild.thrift文件再引用playe.thrift文件编译时循环扫描文件无法通过。具体如下：
+>Tips: 字段用required修饰时，编译的后的JAVA代码通过validate()校验。
+
+```java
+  public void validate() throws org.apache.thrift.TException {
+    // check for required fields
+    if (name == null) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'name' was not present! Struct: " + toString());
+    }
+    if (role == null) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'role' was not present! Struct: " + toString());
+    }
+    if (gender == null) {
+      throw new org.apache.thrift.protocol.TProtocolException("Required field 'gender' was not present! Struct: " + toString());
+    }
+    // check for sub-struct validity
+    if (guild != null) {
+      guild.validate();
+    }
+  }
+```
+
+>Tips: struct不可以双向引用
 
 ```bash
+//player.thrift文件引用了guild.thrfit后，guild.thrift文件再引用playe.thrift文件编译时循环扫描文件无法通过。 
 (base) buman@bogon % thrift --gen java player.thrift
 zsh: segmentation fault  thrift --gen java player.thrift
 (base) buman@bogon % thrift --gen -v java player.thrift //用--verbose或者-v再试一下 
