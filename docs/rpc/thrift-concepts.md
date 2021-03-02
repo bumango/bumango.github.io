@@ -240,10 +240,43 @@ classDiagram
     AbstractNonblockingServer <|-- TThreadedSelectorServer
 ```
 
-* TSimpleServer:
+* TSimpleServer: 
+  * 该模式下只有一个工作线程，接受请求和处理数据都在一个线程中；
+  * 简单的阻塞IO形式，一次只能处理一个请求；
+  * 多个客户端请求是被串行处理，所以基本都是在做演示时使用，生产环境基本不用；
+  * 工作模式类似于常见的socket示例代码：
+  
+  ```java
+  while(true){
+      serverSocket.accept();
+      //process accept
+      read();
+      write();
+      }
+  ```
+
+* TNonblockingServer:
+  * 该模式同样只有一个工作线程，相较于TSimpleServer模式的不同，该模式采用IO多路复用；
+  * 基于IO多路复用实现，非阻塞IO，使用selector可以同时监听多个到达的连接请求；
+  * 虽然同时监听多个请求，但是请求的处理还是串行，无法充分利用多核优势，且某个请求处理被阻塞会直接影响后续请求的处理；
+  * 该模式下必须使用TFramedTransport；
+  * 该模式可以类比Reactor模式的单Reactor单线程模型理解；
 * TThreadPoolServer:
+  * 该模式是对TSimpleServer模式的优化，同样是基于阻塞IO实现，每次只能监听一个请求连接；
+  * 采用线程池技术，请求到达后，交给worker线程来处理，多线程并行处理了IO的读写。
+  * 单个请求的处理不会影响服务端整体的性能，但是连接池的规模决定了该模式的工作能力；
 * THsHaServer:
+  * 该模式可以理解为对TNonblockingServer的优化，半同步半异步的工作模式；
+  * 基于IO多路复用实现，非阻塞IO；
+  * 基于线程池技术，多个请求的IO读写交个worker线程并行处理；
+  * 该模式必须使用TFramedTransport；
+  * 该模式可以类比Reactor模式的单Reactor多线程理解；
 * TThreadedSelectorServer:
+  * 该模式是目前Thrift提供的最高级、最复杂也是最高效的工作模式；可以类比Reactor模式的主从Reactor多线程模型理解；
+  * 一个AcceptThread线程基于IO多路复用，专门同时监听并处理多个到达的新连接；并把建立的新连接转交给Selector线程池来进一步处理；
+  * 一个Selector线程池对象，同时维护多个Selector来为新连接服务，其他几种非阻塞IO实现的模式都只有一个Selector工作；
+  * 一个负载均衡器SelectorThreadLoadBalancer对象，也就是Reactor中的Dispather；负责决策并转发新连接到具体的某个Selector；
+  * 一个ExecutorService工作线程池对象，其中的woker thead完成每个请求对应的逻辑处理；
 
 ## 参考
 
